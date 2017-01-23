@@ -88,7 +88,7 @@ object Aligner {
       // use char count and char offset to get new ptr
       last_ptr = last_char_count + char_offset_map(i)
       println("Last ptr:" + last_ptr)
-      yield (first_ptr, last_ptr)
+      (first_ptr, last_ptr)
     }
 
   }
