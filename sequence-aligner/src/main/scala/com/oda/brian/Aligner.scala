@@ -15,7 +15,7 @@ object Aligner {
     test_string ++= reference_string
     val BWT = BWTMatrix(test_string)
     BWT.foreach(println)
-    getBWTMatrixFirstLastCols(BWT).foreach(println)
+    //getBWTMatrixFirstLastCols(BWT).foreach(println)
    
   }
 
@@ -41,7 +41,7 @@ object Aligner {
     // return a tuple of the first character and the last character of each string
     val first_col = BWTMatrix.map(s => s(0))
     val last_col = BWTMatrix.map(s => s(s.length - 1))
-    return (first_col, last_col)
+    return (first_col.toList, last_col.toList)
   }
 
   def getMatchRange(query: String, last_col: List[Char] ) : (Int, Int) = {
@@ -72,7 +72,7 @@ object Aligner {
     var first_ptr = 0
     var last_ptr = last_col.length - 1
     // iterate through the reversed string, one char at a time
-    for (i <- reverse_query) {
+    for (i <- reverse_query.toString) {
       // get index of first occurance of char from first_ptr
       val first_idx = last_col.indexOf(i, first_ptr)
       // use this to get the count of that character
