@@ -72,7 +72,7 @@ object Aligner {
     var first_ptr = 0
     var last_ptr = last_col.length - 1
     // iterate through the reversed string, one char at a time
-    for (i <- reverse_query.toString) {
+    for (i <- reverse_query.toString, first_ptr, last_ptr) {
       // get index of first occurance of char from first_ptr
       val first_idx = last_col.indexOf(i, first_ptr)
       // use this to get the count of that character
@@ -88,7 +88,6 @@ object Aligner {
       // use char count and char offset to get new ptr
       last_ptr = last_char_count + char_offset_map(i)
       println("Last ptr:" + last_ptr)
-      (first_ptr, last_ptr)
     }
 
   }
