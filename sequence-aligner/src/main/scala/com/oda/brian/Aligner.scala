@@ -37,11 +37,11 @@ object Aligner {
     arr_buff.toArray.sorted
   }
 
-  def getBWTMatrixFirstLastCols(BWTMatrix: Array[String]) : List[List[Char], List[Char]] = {
+  def getBWTMatrixFirstLastCols(BWTMatrix: Array[String]) : (List[Char], List[Char]) = {
     // return a tuple of the first character and the last character of each string
     val first_col = BWTMatrix.map(s => s(0))
     val last_col = BWTMatrix.map(s => s(s.length - 1))
-    return List(first_col, last_col)
+    return (first_col, last_col)
   }
 
   def getMatchRange(query: String, last_col: List[Char] ) : (Int, Int) = {
@@ -59,7 +59,7 @@ object Aligner {
     val char_offset_map = Map('A' -> offset_A, 'C' -> offset_C, 'G' -> offset_G, 'T' -> offset_T)
 
     // get array consisting of counts of that letter up until that location
-    val count_arr = new mutable.ArrayBuffer.empty[Int]
+    val count_arr = new collection.mutable.ArrayBuffer.empty[Int]
     for (i <- 0 until last_col.length) {
       // count number of occurances of letter at index in last col up until that point
       count_arr ++= last_col.slice(0, i).count(c => c == last_col(i))
