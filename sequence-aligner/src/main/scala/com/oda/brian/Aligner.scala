@@ -49,7 +49,7 @@ object Aligner {
     val offset_T = offset_G + num_G
 
     // create map between character and offset
-    val char_offset_map = Map('A' -> offset_A, 'C' -> offset_C, 'G' -> offset_G, 'T' -> offset_T)
+    val char_offset_map = Map('A' -> offset_A, 'C' -> offset_C, 'G' -> offset_G, 'T' -> offset_T, '$' -> 0)
     println("charoffsetmap: " + char_offset_map)
 
     // get array consisting of counts of that letter up until that location
@@ -60,12 +60,15 @@ object Aligner {
       count_arr += last_col.slice(0, i).count(c => c == last_col(i))
     }
 
+    println("getting match ranges...")
     //reads.foreach(x => println(getMatchRange(x, last_col, count_arr, char_offset_map)))
     val match_ranges = distReads.map(x => getMatchRange(x.slice(0, 6), last_col, count_arr, char_offset_map))
 
+    println("getting sequence positions...")
     //val match_range = getMatchRange("ACG", first_last_cols._2, count_arr, char_offset_map)
     val seq_positions = match_ranges.map(x => getSequencePosition(last_col, count_arr, char_offset_map, x))
     seq_positions.collect.foreach(println)
+    println("Number of matched reads: " + seq_positions.collect.count(x => x > 0))
   }
 
   def BWTMatrix(T: StringBuilder) : Array[String] = {
@@ -102,34 +105,39 @@ object Aligner {
 
     var first_ptr = 0
     var last_ptr = last_col.length - 1
+    var query_char = ' '
     breakable {
       // iterate through the reversed string, one char at a time
       for (i <- reverse_query.toString) {
+        query_char = i
         // get index of first occurance of char from first_ptr
-        val first_idx = last_col.indexOf(i, first_ptr)
+        val first_idx = last_col.indexOf(query_char, first_ptr)
         // if we get a negative index, the string doesn't exist
         if (first_idx < 0) {
-          break
+          query_char = last_col(first_ptr)
         }
         // use this to get the count of that character
         val first_char_count = count_arr(first_idx)
         // use char count and char offset to get new ptr
-        first_ptr = first_char_count + char_offset_map(i)
+        first_ptr = first_char_count + char_offset_map(query_char)
 
         // repeat process for last_ptr
         // get index of last occurance of char from last_ptr
-        val last_idx = last_col.lastIndexOf(i, last_ptr)
+        val last_idx = last_col.lastIndexOf(query_char, last_ptr)
         // if we get a negative index, the string doesn't exist
         if (last_idx < 0) {
-          break
+          query_char = last_col(last_ptr)
         }
         // use this to get count of that character
         val last_char_count = count_arr(last_idx)
         // use char count and char offset to get new ptr
-        last_ptr = last_char_count + char_offset_map(i)
+        last_ptr = last_char_count + char_offset_map(query_char)
 
         //println("first match:" + first_idx + " last match:" + last_idx)
         //println("(" + first_ptr + "," + last_ptr + ")")
+        if (query_char != i) {
+          println("Mismatch: expected " + i + " but found " + query_char)
+        }
       }
       return (first_ptr, last_ptr)
     }
