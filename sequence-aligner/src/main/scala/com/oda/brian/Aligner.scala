@@ -30,7 +30,7 @@ object Aligner {
     //test_string ++= "ACAACG"
     test_string ++= reference_string
     val BWT = BWTMatrix(test_string)
-    BWT.foreach(println)
+    //BWT.foreach(println)
     //getBWTMatrixFirstLastCols(BWT).foreach(println)
     val first_last_cols = getBWTMatrixFirstLastCols(BWT)
 
@@ -144,6 +144,9 @@ object Aligner {
     if (last_ptr - first_ptr == 0) {
       println("we found a match!")
       var final_ptr = last_ptr
+      if (final_ptr < 0) {
+        return -1
+      }
       while (last_col(final_ptr) != '$') {
         val walk_char_count = count_arr(final_ptr)
         final_ptr = walk_char_count + char_offset_map(last_col(final_ptr))
