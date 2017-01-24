@@ -2,19 +2,28 @@ package com.oda.brian
 
 import util.control.Breaks._
 import scala.collection.mutable.ArrayBuffer
+import org.apache.spark.SparkConf
+import org.apache.spark.SparkContext
+
 /**
   * Created by blhill on 1/22/17.
   */
 object Aligner {
   def main(args: Array[String]): Unit = {
+
+    val conf = new SparkConf().setAppName("Aligner")
+    val sc = new SparkContext(conf)
+
     // read in reference lines from file
-    val ref_file = io.Source.fromFile(args(0)).getLines.toList
-    val read_file = io.Source.fromFile(args(1)).getLines.toList
+    val ref_file = scala.io.Source.fromFile(args(0)).getLines.toList
+    val read_file = scala.io.Source.fromFile(args(1)).getLines.toList
     //    val fileLines = io.Source.fromFile("/nfs/home/blhill/code/github/SequenceAligner/sequence-aligner/src/test/resources/practice_W_1/ref_practice_W_1_chr_1.txt").getLines.toList
     // turn lines into a single string, skipping header line
     val reference_string = ref_file.slice(1, ref_file.length).mkString
     val reads = read_file.slice(1, read_file.length).mkString.split(",")
 
+    // parallelize the reads in spark
+    val distReads = sc.parallelize(reads)
     //
     //
     val test_string = new StringBuilder
@@ -107,6 +116,10 @@ object Aligner {
         // repeat process for last_ptr
         // get index of last occurance of char from last_ptr
         val last_idx = last_col.lastIndexOf(i, last_ptr)
+        // if we get a negative index, the string doesn't exist
+        if (last_idx < 0) {
+          break
+        }
         // use this to get count of that character
         val last_char_count = count_arr(last_idx)
         // use char count and char offset to get new ptr
