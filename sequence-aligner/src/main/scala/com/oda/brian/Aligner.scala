@@ -21,6 +21,7 @@ object Aligner {
     // turn lines into a single string, skipping header line
     val reference_string = ref_file.slice(1, ref_file.length).mkString
     val reads = read_file.slice(1, read_file.length).mkString.split(",")
+    println("Num reads: " + reads.length)
 
     // parallelize the reads in spark
     val distReads = sc.parallelize(reads)
@@ -60,7 +61,7 @@ object Aligner {
     }
 
     //reads.foreach(x => println(getMatchRange(x, last_col, count_arr, char_offset_map)))
-    val match_ranges = distReads.map(x => getMatchRange(x, last_col, count_arr, char_offset_map))
+    val match_ranges = distReads.map(x => getMatchRange(x.slice(0, 28), last_col, count_arr, char_offset_map))
 
     //val match_range = getMatchRange("ACG", first_last_cols._2, count_arr, char_offset_map)
     val seq_positions = match_ranges.map(x => getSequencePosition(last_col, count_arr, char_offset_map, x))
