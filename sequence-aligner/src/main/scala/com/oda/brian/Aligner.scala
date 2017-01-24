@@ -59,10 +59,12 @@ object Aligner {
       count_arr += last_col.slice(0, i).count(c => c == last_col(i))
     }
 
-    reads.foreach(x => println(getMatchRange(x, last_col, count_arr, char_offset_map)))
+    //reads.foreach(x => println(getMatchRange(x, last_col, count_arr, char_offset_map)))
+    val match_ranges = distReads.map(x => getMatchRange(x, last_col, count_arr, char_offset_map))
 
-    val match_range = getMatchRange("ACG", first_last_cols._2, count_arr, char_offset_map)
-    getSequencePosition(last_col, count_arr, char_offset_map, match_range)
+    //val match_range = getMatchRange("ACG", first_last_cols._2, count_arr, char_offset_map)
+    val seq_positions = match_ranges.map(x => getSequencePosition(last_col, count_arr, char_offset_map, x))
+    seq_positions.collect.foreach(println)
   }
 
   def BWTMatrix(T: StringBuilder) : Array[String] = {
