@@ -94,16 +94,33 @@ object Aligner {
     //reads.foreach(x => println(getMatchRange(x, last_col, count_arr, char_offset_map)))
     //val match_ranges = distReads.map(x => getMatchRange(x.slice(0, 6), last_col, count_arr, char_offset_map))
 
-    val match_ranges = distReads.map(x => EXACTMATCH(x.slice(0, seed_len), countMap, occurrences))
-    val seq_positions = match_ranges.map(x => UNPERMUTE(x._2, BWT, countMap, occurrences))
-    seq_positions.collect.foreach(println)
-
+    val match_ranges = distReads.map(x => (x, EXACTMATCH(x.slice(0, seed_len), countMap, occurrences)))
+    //val rev_match_ranges = distReads.map(x => EXACTMATCH(x.slice(0, seed_len).reverse, countMap, occurrences))
+    val seq_positions = match_ranges.map(x => (x, UNPERMUTE(x._2._2, BWT, countMap, occurrences)))
+    //val rev_seq_positions = rev_match_ranges.map(x => UNPERMUTE(x._2, BWT, countMap, occurrences))
+    val aligned_positions = seq_positions.map(x => localAlign(reference_string, x._1._1, x._2))
+    aligned_positions.foreach(println)
     println("getting sequence positions...")
     //val match_range = getMatchRange("ACG", first_last_cols._2, count_arr, char_offset_map)
     //val seq_positions = match_ranges.map(x => getSequencePosition(last_col, count_arr, char_offset_map, x))
     //seq_positions.collect.foreach(println)
     //println("Number of matched reads: " + seq_positions.collect.count(x => x > 0))
   }
+
+  def localAlign(ref_string: String, read: String, loc: Int): Int = {
+    var num_mismatches = 0
+    val ref_slice = ref_string.slice(loc, loc + read.length)
+    println("ref :" + ref_slice)
+    println("read:" + read)
+    for (i <- 0 until read.length) {
+      if (ref_slice(i) != read(i)) {
+        num_mismatches = num_mismatches + 1
+      }
+    }
+    println(num_mismatches + " mismatches")
+    return num_mismatches
+  }
+
 
   def createBWTMatrix(T: StringBuilder) : Array[String] = {
     // create empty array of strings
