@@ -204,6 +204,7 @@ object Aligner {
 
     while (start_ptr < end_ptr && i >= 1) {
       c = query(i)
+      println(c + ",(" + start_ptr + "," + end_ptr + "), " + i)
       start_ptr = countMap(c) + occurrence(start_ptr) + 1
       end_ptr = countMap(c) + occurrence(end_ptr) + 1
       i = i - 1
