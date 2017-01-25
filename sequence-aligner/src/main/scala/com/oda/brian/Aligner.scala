@@ -112,6 +112,10 @@ object Aligner {
     val ref_slice = ref_string.slice(loc, loc + read.length)
     println("ref :" + ref_slice)
     println("read:" + read)
+    if (ref_slice.length < read.length) {
+      println("Error: ref string too short")
+      return -1
+    }
     for (i <- 0 until read.length) {
       if (ref_slice(i) != read(i)) {
         num_mismatches = num_mismatches + 1
