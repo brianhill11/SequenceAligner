@@ -32,7 +32,7 @@ object Aligner {
       val test_string = new StringBuilder
       test_string ++= "ACAACG"
 
-      val BWTMatrix_test = BWTMatrix(test_string)
+      val BWTMatrix_test = createBWTMatrix(test_string)
       val BWT_test = getBWTMatrixLastCol(BWTMatrix_test)
       val countMap_test = createCountMap(BWT_test)
       val occurrences_test = createOccurrences(BWT_test)
@@ -47,7 +47,7 @@ object Aligner {
     var BWT = ""
     // if we don't get a .bwt file as input, create the transform
     if (args.length < 3) {
-      val BWTMatrix = BWTMatrix(test_string)
+      val BWTMatrix = createBWTMatrix(test_string)
       BWT = getBWTMatrixLastCol(BWTMatrix)
       writeBWT(BWT, args(0) + ".bwt")
     }
@@ -93,7 +93,7 @@ object Aligner {
     //println("Number of matched reads: " + seq_positions.collect.count(x => x > 0))
   }
 
-  def BWTMatrix(T: StringBuilder) : Array[String] = {
+  def createBWTMatrix(T: StringBuilder) : Array[String] = {
     // create empty array of strings
     val arr_buff = collection.mutable.ArrayBuffer.empty[String]
     // if last character isn't a $, append one
