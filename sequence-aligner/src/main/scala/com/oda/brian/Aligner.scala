@@ -95,26 +95,43 @@ object Aligner {
     //val match_ranges = distReads.map(x => getMatchRange(x.slice(0, 6), last_col, count_arr, char_offset_map))
 
     val match_ranges = distReads.map(x => (x, EXACTMATCH(x.slice(0, seed_len), countMap, occurrences)))
-    //val rev_match_ranges = distReads.map(x => EXACTMATCH(x.slice(0, seed_len).reverse, countMap, occurrences))
+    val rev_match_ranges = distReads.map(x => (x, EXACTMATCH(x.reverse.slice(0, seed_len), countMap, occurrences)))
+
     val seq_positions = match_ranges.map(x => (x, UNPERMUTE(x._2._2, BWT, countMap, occurrences)))
-    //val rev_seq_positions = rev_match_ranges.map(x => UNPERMUTE(x._2, BWT, countMap, occurrences))
-    val aligned_positions = seq_positions.collect.map(x => localAlign(reference_string, x._1._1, x._2))
-    aligned_positions.foreach(println)
-    println("getting sequence positions...")
+    val rev_seq_positions = rev_match_ranges.map(x => (x, UNPERMUTE(x._2._2, BWT, countMap, occurrences)))
+
+    val aligned_positions = seq_positions.map(x => localAlign(reference_string, x._1._1, x._2))
+    val rev_aligned_positions = rev_seq_positions.map(x => localAlign(reference_string, x._1._1, x._2))
+
+    val filtered_pos = aligned_positions.filter(x => x._3 < 5).collect
+    val rev_filtered_pos = rev_aligned_positions.filter(x => x._3 < 5).collect
+    writeResults(filtered_pos.toList, "results_forward.txt")
+    writeResults(rev_filtered_pos.toList, "results_reverse.txt")
+
     //val match_range = getMatchRange("ACG", first_last_cols._2, count_arr, char_offset_map)
     //val seq_positions = match_ranges.map(x => getSequencePosition(last_col, count_arr, char_offset_map, x))
     //seq_positions.collect.foreach(println)
     //println("Number of matched reads: " + seq_positions.collect.count(x => x > 0))
   }
 
-  def localAlign(ref_string: String, read: String, loc: Int): Int = {
+  def writeResults(read: List[(String, Int, Int)], Filename: String): Unit = {
+    val file = new File(Filename)
+    val bw = new BufferedWriter(new FileWriter(file))
+    val map_strings = read.map(x => x._1 + "\t" + x._2)
+    for (line <- map_strings) {
+      bw.write(line + "\n")
+    }
+    bw.close
+  }
+
+  def localAlign(ref_string: String, read: String, loc: Int): (String, Int, Int) = {
     var num_mismatches = 0
     val ref_slice = ref_string.slice(loc, loc + read.length)
     println("ref :" + ref_slice)
     println("read:" + read)
     if (ref_slice.length < read.length) {
       println("Error: ref string too short")
-      return -1
+      return (read, loc, -1)
     }
     for (i <- 0 until read.length) {
       if (ref_slice(i) != read(i)) {
@@ -122,7 +139,7 @@ object Aligner {
       }
     }
     println(num_mismatches + " mismatches")
-    return num_mismatches
+    return (read, loc, num_mismatches)
   }
 
 
