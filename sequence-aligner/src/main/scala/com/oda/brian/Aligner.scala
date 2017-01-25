@@ -11,7 +11,7 @@ import java.io.{BufferedWriter, File, FileWriter}
 object Aligner {
   def main(args: Array[String]): Unit = {
 
-    val runTest = 1
+    val runTest = 0
 
     //
 
