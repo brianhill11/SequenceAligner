@@ -11,7 +11,24 @@ import java.io.{BufferedWriter, File, FileWriter}
 object Aligner {
   def main(args: Array[String]): Unit = {
 
-    val runTest = 1
+    val runTest = 0
+
+    //
+
+    if (runTest == 1) {
+      val test_string = new StringBuilder
+      test_string ++= "ACAACG"
+
+      val BWTMatrix_test = createBWTMatrix(test_string)
+      val BWT_test = getBWTMatrixLastCol(BWTMatrix_test)
+      val countMap_test = createCountMap(BWT_test)
+      val occurrences_test = createOccurrences(BWT_test)
+      println(occurrences_test)
+      val test_queries = List("AAC", "CAA", "ACG", "GAC")
+      test_queries.foreach(x => println(EXACTMATCH(x, countMap_test, occurrences_test)))
+      System.exit(0)
+    }
+
     val conf = new SparkConf().setAppName("Aligner")
     val sc = new SparkContext(conf)
 
@@ -26,20 +43,7 @@ object Aligner {
 
     // parallelize the reads in spark
     val distReads = sc.parallelize(reads)
-    //
 
-    if (runTest == 1) {
-      val test_string = new StringBuilder
-      test_string ++= "ACAACG"
-
-      val BWTMatrix_test = createBWTMatrix(test_string)
-      val BWT_test = getBWTMatrixLastCol(BWTMatrix_test)
-      val countMap_test = createCountMap(BWT_test)
-      val occurrences_test = createOccurrences(BWT_test)
-      val test_queries = List("ACC", "CAA", "ACG", "GAC")
-      test_queries.foreach(x => println(EXACTMATCH(x, countMap_test, occurrences_test)))
-      System.exit(0)
-    }
     val test_string = new StringBuilder
     //test_string ++= "ACAACG"
     test_string ++= reference_string
@@ -69,7 +73,7 @@ object Aligner {
       countMap = readCountMap(args(3))
     }
 
-    var occurrences = List.empty[Int]
+    var occurrences = List.empty[Map[Char, Int]]
     // if we don't get a .occ file as input, create the occurrences list
     if (args.length < 5) {
       occurrences = createOccurrences(BWT)
@@ -81,10 +85,13 @@ object Aligner {
     }
 
 
-
+    val seed_len = 14
     println("getting match ranges...")
     //reads.foreach(x => println(getMatchRange(x, last_col, count_arr, char_offset_map)))
     //val match_ranges = distReads.map(x => getMatchRange(x.slice(0, 6), last_col, count_arr, char_offset_map))
+
+    val match_ranges = distReads.map(x => EXACTMATCH(x.slice(0, seed_len), countMap, occurrences))
+    match_ranges.foreach(println)
 
     println("getting sequence positions...")
     //val match_range = getMatchRange("ACG", first_last_cols._2, count_arr, char_offset_map)
@@ -142,7 +149,7 @@ object Aligner {
     val num_G = BWT.count(c => c == 'G')
     val num_T = BWT.count(c => c == 'T')
     // use counts of letters to get offsets (1 for the $ char)
-    val offset_A = 0
+    val offset_A = 1
     val offset_C = offset_A + num_A
     val offset_G = offset_C + num_C
     val offset_T = offset_G + num_G
@@ -170,43 +177,63 @@ object Aligner {
     return countMap
   }
 
-  def createOccurrences(BWT: String): List[Int] = {
+  def createOccurrences(BWT: String): List[Map[Char, Int]] = {
     // get array consisting of counts of that letter up until that location
-    val occurrences = ArrayBuffer.empty[Int]
+    val occurrences = ArrayBuffer.empty[Map[Char, Int]]
 
+    var num_occurrences = scala.collection.mutable.Map('A' -> 0, 'C' -> 0, 'G' -> 0, 'T' -> 0, '$' -> 0)
     for (i <- 0 until BWT.length) {
+      val char = BWT(i)
       // count number of instances of letter at index in last col up until that point
-      occurrences += BWT.slice(0, i).count(c => c == BWT(i))
+
+      num_occurrences(char) = num_occurrences(char) + 1
+      occurrences += num_occurrences.toMap
+
     }
     return occurrences.toList
   }
 
-  def writeOccurrences(Occurrences: List[Int], Filename: String): Unit = {
+  def writeOccurrences(Occurrences: List[Map[Char, Int]], Filename: String): Unit = {
     val file = new File(Filename + ".occ")
     val bw = new BufferedWriter(new FileWriter(file))
     for (line <- Occurrences) {
-      bw.write(line + "\n")
+      bw.write(line('A') + "," + line('C') + "," + line('G') + "," + line('T') + "\n")
     }
     bw.close
   }
 
-  def readOccurrences(Filename: String) : List[Int] = {
-    val occurrences = scala.io.Source.fromFile(Filename).getLines.toList.map(_.toInt)
+  def readOccurrences(Filename: String) : List[Map[Char, Int]] = {
+    val occurrence_tuples = scala.io.Source.fromFile(Filename).getLines.toList.map(_.split(","))
+    val occurrences = occurrence_tuples.map(x => Map('A' -> x(0).toInt, 'C' -> x(1).toInt, 'G' -> x(2).toInt, 'T' -> x(3).toInt)).toList
     return occurrences
   }
 
-  def EXACTMATCH(query: String, countMap: Map[Char, Int], occurrence: List[Int]): (Int, Int) = {
+  def STEPLEFT(r: Int, BWT: String, countMap: Map[Char, Int], occurrence: List[Map[Char, Int]]): Int = {
+    return countMap(BWT(r)) + 1 + occurrence(r)(BWT(r))
+  }
+
+  def EXACTMATCH(query: String, countMap: Map[Char, Int], occurrence: List[Map[Char, Int]]): (Int, Int) = {
     val next_char = Map('A' -> 'C', 'C' -> 'G', 'G' -> 'T', 'T' -> 'E')
     var c = query(query.length - 1)
-    var start_ptr = countMap(c) + 1
-    var end_ptr = countMap(next_char(c)) + 1
+    var start_ptr = countMap(c)
+    var end_ptr = countMap(next_char(c)) - 1
     var i = query.length - 2
-
-    while (start_ptr < end_ptr && i >= 1) {
+    println("query: " + query)
+    println(c + ",(" + start_ptr + "," + end_ptr + "), " + i)
+    while (start_ptr <= end_ptr && i >= 0) {
       c = query(i)
+
+      start_ptr = countMap(c) + occurrence(start_ptr)(c) - 1
+      end_ptr = countMap(c) + occurrence(end_ptr)(c) - 1
+      // fix issue of $
+      if (start_ptr < 1) {
+        start_ptr = end_ptr
+      }
+      // if we can't find a valid match, throw error
+      if (occurrence(start_ptr)(c) == occurrence(end_ptr)(c)) {
+        return (-1, -1)
+      }
       println(c + ",(" + start_ptr + "," + end_ptr + "), " + i)
-      start_ptr = countMap(c) + occurrence(start_ptr) + 1
-      end_ptr = countMap(c) + occurrence(end_ptr) + 1
       i = i - 1
     }
     return (start_ptr, end_ptr)
