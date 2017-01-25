@@ -233,9 +233,9 @@ object Aligner {
         start_ptr = end_ptr
       }
       // if we can't find a valid match, throw error
-      if (occurrence(start_ptr)(c) == occurrence(end_ptr)(c)) {
+/*      if (occurrence(start_ptr)(c) == occurrence(end_ptr)(c)) {
         return (-1, -1)
-      }
+      }*/
       println(c + ",(" + start_ptr + "," + end_ptr + "), " + i)
       i = i - 1
     }
