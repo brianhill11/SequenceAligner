@@ -51,6 +51,7 @@ object Aligner {
     var BWT = ""
     // if we don't get a .bwt file as input, create the transform
     if (args.length < 3) {
+      println("Creating BWT...")
       val BWTMatrix = createBWTMatrix(test_string)
       BWT = getBWTMatrixLastCol(BWTMatrix)
       writeBWT(BWT, args(0) + ".bwt")
@@ -65,6 +66,7 @@ object Aligner {
     var countMap: Map[Char, Int] = Map()
     // if we don't get a .cntmap file as input, create the count map
     if (args.length < 4) {
+      println("Creating countMap...")
       countMap = createCountMap(BWT)
       writeCountMap(countMap, args(0) + ".cntmap")
     }
@@ -76,6 +78,7 @@ object Aligner {
     var occurrences = List.empty[Map[Char, Int]]
     // if we don't get a .occ file as input, create the occurrences list
     if (args.length < 5) {
+      println("Creating occurrences...")
       occurrences = createOccurrences(BWT)
       writeOccurrences(occurrences, args(0) + ".occ")
     }
@@ -91,7 +94,7 @@ object Aligner {
     //val match_ranges = distReads.map(x => getMatchRange(x.slice(0, 6), last_col, count_arr, char_offset_map))
 
     val match_ranges = distReads.map(x => EXACTMATCH(x.slice(0, seed_len), countMap, occurrences))
-    match_ranges.foreach(println)
+    match_ranges.collect.foreach(println)
 
     println("getting sequence positions...")
     //val match_range = getMatchRange("ACG", first_last_cols._2, count_arr, char_offset_map)
