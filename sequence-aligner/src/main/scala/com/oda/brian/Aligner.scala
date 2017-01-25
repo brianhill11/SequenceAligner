@@ -39,7 +39,7 @@ object Aligner {
     //    val fileLines = io.Source.fromFile("/nfs/home/blhill/code/github/SequenceAligner/sequence-aligner/src/test/resources/practice_W_1/ref_practice_W_1_chr_1.txt").getLines.toList
     // turn lines into a single string, skipping header line
     val reference_string = ref_file.slice(1, ref_file.length).mkString
-    val reads = read_file.slice(1, read_file.length).mkString.split(",")
+    val reads = read_file.slice(1, read_file.length).flatMap(_.split(","))
     println("Num reads: " + reads.length)
 
     // parallelize the reads in spark
