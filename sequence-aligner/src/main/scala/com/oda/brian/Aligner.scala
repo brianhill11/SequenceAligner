@@ -148,7 +148,7 @@ object Aligner {
     val offset_T = offset_G + num_G
 
     // create map between character and offset
-    val char_count_map = Map('A' -> offset_A, 'C' -> offset_C, 'G' -> offset_G, 'T' -> offset_T, '$' -> 0)
+    val char_count_map = Map('A' -> offset_A, 'C' -> offset_C, 'G' -> offset_G, 'T' -> offset_T, 'E' -> (BWT.length-2), '$' -> 0)
     println("charoffsetmap: " + char_count_map)
     return char_count_map
   }
@@ -196,9 +196,10 @@ object Aligner {
   }
 
   def EXACTMATCH(query: String, countMap: Map[Char, Int], occurrence: List[Int]): (Int, Int) = {
+    val next_char = Map('A' -> 'C', 'C' -> 'G', 'G' -> 'T', 'T' -> 'E')
     var c = query(query.length - 1)
     var start_ptr = countMap(c) + 1
-    var end_ptr = countMap(c + 1) + 1
+    var end_ptr = countMap(next_char(c)) + 1
     var i = query.length - 2
 
     while (start_ptr < end_ptr && i >= 1) {
