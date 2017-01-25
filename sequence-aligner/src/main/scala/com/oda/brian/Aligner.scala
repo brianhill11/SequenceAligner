@@ -11,7 +11,7 @@ import java.io.{BufferedWriter, File, FileWriter}
 object Aligner {
   def main(args: Array[String]): Unit = {
 
-    val runTest = 0
+    val runTest = 1
 
     //
 
@@ -24,8 +24,9 @@ object Aligner {
       val countMap_test = createCountMap(BWT_test)
       val occurrences_test = createOccurrences(BWT_test)
       println(occurrences_test)
-      val test_queries = List("AAC", "CAA", "ACG", "GAC")
-      test_queries.foreach(x => println(EXACTMATCH(x, countMap_test, occurrences_test)))
+      val test_queries = List("AAC", "CAA", "ACG", "GAC", "CAAC")
+      val test_q_ranges = test_queries.map(x => EXACTMATCH(x, countMap_test, occurrences_test))
+      test_q_ranges.foreach(x => UNPERMUTE(x._2, BWT_test, countMap_test, occurrences_test))
       System.exit(0)
     }
 
@@ -94,7 +95,8 @@ object Aligner {
     //val match_ranges = distReads.map(x => getMatchRange(x.slice(0, 6), last_col, count_arr, char_offset_map))
 
     val match_ranges = distReads.map(x => EXACTMATCH(x.slice(0, seed_len), countMap, occurrences))
-    match_ranges.collect.foreach(println)
+    val seq_positions = match_ranges.map(x => UNPERMUTE(x._2, BWT, countMap, occurrences))
+    seq_positions.collect.foreach(println)
 
     println("getting sequence positions...")
     //val match_range = getMatchRange("ACG", first_last_cols._2, count_arr, char_offset_map)
@@ -212,7 +214,21 @@ object Aligner {
   }
 
   def STEPLEFT(r: Int, BWT: String, countMap: Map[Char, Int], occurrence: List[Map[Char, Int]]): Int = {
-    return countMap(BWT(r)) + 1 + occurrence(r)(BWT(r))
+    return countMap(BWT(r)) + occurrence(r)(BWT(r)) - 1
+  }
+
+  def UNPERMUTE(x: Int, BWT: String, countMap: Map[Char, Int], occurrence: List[Map[Char, Int]]) : Int = {
+    var r = x
+    var T = new StringBuilder
+    var count = 0
+    while (BWT(r) != '$') {
+      T += BWT(r)
+      r = STEPLEFT(r, BWT, countMap, occurrence)
+      count = count + 1
+
+    }
+    println(T.toString.reverse, "seq location:" + count)
+    return count
   }
 
   def EXACTMATCH(query: String, countMap: Map[Char, Int], occurrence: List[Map[Char, Int]]): (Int, Int) = {
