@@ -98,7 +98,7 @@ object Aligner {
     //val rev_match_ranges = distReads.map(x => EXACTMATCH(x.slice(0, seed_len).reverse, countMap, occurrences))
     val seq_positions = match_ranges.map(x => (x, UNPERMUTE(x._2._2, BWT, countMap, occurrences)))
     //val rev_seq_positions = rev_match_ranges.map(x => UNPERMUTE(x._2, BWT, countMap, occurrences))
-    val aligned_positions = seq_positions.map(x => localAlign(reference_string, x._1._1, x._2))
+    val aligned_positions = seq_positions.collect.map(x => localAlign(reference_string, x._1._1, x._2))
     aligned_positions.foreach(println)
     println("getting sequence positions...")
     //val match_range = getMatchRange("ACG", first_last_cols._2, count_arr, char_offset_map)
